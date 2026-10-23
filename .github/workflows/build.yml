@@ -201,7 +201,8 @@ jobs:
             # The stock SUSFS patch in susfs4ksu targets classic KernelSU layouts,
             # not the official KernelSU-Next v3 tree. Use the SUSFS-integrated KSUN fork.
             git clone --depth=1 -b dev-susfs https://github.com/pershoot/KernelSU-Next.git KernelSU-Next
-            echo "Using pre-integrated KernelSU-Next SUSFS branch: dev-susfs"
+            git -C KernelSU-Next checkout --detach d21e0a66c887ae4bc75b7c9f83e41761819ec09a
+            echo "Using pre-integrated KernelSU-Next SUSFS commit: d21e0a66c887ae4bc75b7c9f83e41761819ec09a"
             git -C KernelSU-Next rev-parse HEAD
           else
             git clone --filter=blob:none --no-checkout https://github.com/KernelSU-Next/KernelSU-Next.git KernelSU-Next
