@@ -126,13 +126,3 @@ fi
 JOBS=$(( $(nproc) / 2 ))
 [ "${JOBS}" -lt 1 ] && JOBS=1
 make -j"${JOBS}" ${MAKE_ARGS} Image KCFLAGS="-Wno-error"
- out/.config; then
-  echo "::error::SUSFS was requested but CONFIG_KSU_SUSFS=y is absent after olddefconfig. Refusing to package a kernel without built-in SUSFS." >&2
-  exit 1
-fi
-
-[ -f scripts/setlocalversion ] && sed -i 's/-dirty//g' scripts/setlocalversion || true
-
-JOBS=$(( $(nproc) / 2 ))
-[ "${JOBS}" -lt 1 ] && JOBS=1
-make -j"${JOBS}" ${MAKE_ARGS} Image KCFLAGS="-Wno-error"
