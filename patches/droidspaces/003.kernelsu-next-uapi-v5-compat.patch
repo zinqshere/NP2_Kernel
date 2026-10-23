@@ -1,0 +1,28 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+Subject: [PATCH] kernelsu-next: advertise UAPI v5 for older manager compatibility
+
+The KernelSU-Next v3.4.2 dev-susfs kernel reports UAPI v6, while the
+installed spoofed manager reports UAPI v5 and refuses to work. Advertise
+v5 so older managers can proceed. Version-6 capabilities such as symbol
+lookup and preinit remain present in the source; do not depend on these
+capabilities from the older manager.
+
+---
+ uapi/supercall.h | 4 +++-
+ 1 file changed, 3 insertions(+), 1 deletion(-)
+
+diff --git a/uapi/supercall.h b/uapi/supercall.h
+--- a/uapi/supercall.h
++++ b/uapi/supercall.h
+@@ -6,7 +6,9 @@
+ // 3: scoped su-session driver fd
+ // 4: add KSU_GET_INFO_FLAG_BUNDLED
+ // 5: add EVENT_SERVICES with a start/skip result
+-// 6: add KSU_IOCTL_LOOKUP_SYMBOLS and KSU_GET_INFO_FLAG_PREINIT; modules.rc and preinit may live under /metadata/vold/ksu
+-static const __u32 KERNEL_SU_UAPI_VERSION = 6;
++// Version 6 adds symbol lookup and preinit support. Older managers may require v5.
++// Compatibility caveat: v6 functionality is still compiled in but is not advertised.
++static const __u32 KERNEL_SU_UAPI_VERSION = 5;
+ 
+ /* Magic numbers for reboot hook to install fd */
+ static const __u32 KSU_INSTALL_MAGIC1 = 0xDEADBEEF;
