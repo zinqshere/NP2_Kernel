@@ -71,6 +71,9 @@ EXTRA_CFG="out/ci-extra.config"
 : > "${EXTRA_CFG}"
 echo "CONFIG_KSU=y" >> "${EXTRA_CFG}"
 
+# Official KernelSU-Next v3.4.2 exposes KSU as the driver Kconfig option.
+# SUSFS in this workflow is applied via the external SUSFS patch set; do not
+# assume that the official KSU tree defines CONFIG_KSU_SUSFS.
 if [ "${SUSFS_SUPPORT}" = "true" ]; then
   echo "CONFIG_KSU_SUSFS=y" >> "${EXTRA_CFG}"
 fi
@@ -107,6 +110,16 @@ if [ -f version ]; then
   cp version out/version
 fi
 make ${MAKE_ARGS} olddefconfig
+
+# Fail early if Kconfig silently disabled KSU or a requested SUSFS option.
+if ! grep -q '^CONFIG_KSU=y$' out/.config; then
+  echo "::error::CONFIG_KSU=y did not survive olddefconfig" >&2
+  exit 1
+fi
+if [ "${SUSFS_SUPPORT}" = "true" ] && ! grep -q '^CONFIG_KSU_SUSFS=y$' out/.config; then
+  echo "::warning::CONFIG_KSU_SUSFS is not present/enabled after olddefconfig; verify that the selected SUSFS patch set defines this option."
+fi
+
 [ -f scripts/setlocalversion ] && sed -i 's/-dirty//g' scripts/setlocalversion || true
 
 JOBS=$(( $(nproc) / 2 ))
