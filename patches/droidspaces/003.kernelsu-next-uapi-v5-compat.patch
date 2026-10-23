@@ -14,7 +14,7 @@ capabilities from the older manager.
 diff --git a/uapi/supercall.h b/uapi/supercall.h
 --- a/uapi/supercall.h
 +++ b/uapi/supercall.h
-@@ -6,7 +6,9 @@
+@@ -6,7 +6,8 @@
  // 3: scoped su-session driver fd
  // 4: add KSU_GET_INFO_FLAG_BUNDLED
  // 5: add EVENT_SERVICES with a start/skip result
