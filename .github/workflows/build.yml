@@ -223,7 +223,7 @@ jobs:
         if: ${{ inputs.susfs_support == true }}
         run: |
           git clone --depth=1 -b "${{ inputs.susfs_branch || 'gki-android13-5.10' }}" \
-            https://gitlab.com/mistrmochov/susfs4ksu.git
+            https://gitlab.com/simonpunk/susfs4ksu.git
 
       - name: Apply extra patches
         if: ${{ inputs.extra_patches_dir != '' }}
@@ -253,6 +253,10 @@ jobs:
             echo "::error::Missing KernelSU SUSFS integration patch: $ksu_susfs_patch" >&2
             exit 1
           fi
+          # SUSFS's KSU-side patch expects the matching sucompat header from
+          # the same patch set. Copy it before applying the integration patch.
+          cp "$GITHUB_WORKSPACE/susfs4ksu/kernel_patches/KernelSU/kernel/sucompat.h" \
+            "$KERNEL_DIR/KernelSU-Next/kernel/sucompat.h"
           cd KernelSU-Next
           patch --forward --batch -p1 < "$GITHUB_WORKSPACE/susfs4ksu/kernel_patches/KernelSU/10_enable_susfs_for_ksu.patch"
           cd ..
@@ -264,11 +268,8 @@ jobs:
             echo "::error::Missing kernel SUSFS patch: $susfs_patch" >&2
             exit 1
           fi
-          if [ "${{ inputs.susfs_force }}" = "true" ]; then
-            patch -p1 --force < "$susfs_patch" || echo "Continuing despite patch failure"
-          else
-            patch -p1 < "$susfs_patch"
-          fi
+          # Never package a kernel if any SUSFS hunk fails to apply.
+          patch --forward --batch -p1 < "$susfs_patch"
 
       - name: Apply BBG patches
         if: ${{ inputs.bbg_support == true }}
