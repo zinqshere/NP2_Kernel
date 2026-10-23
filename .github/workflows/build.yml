@@ -253,10 +253,16 @@ jobs:
             echo "::error::Missing KernelSU SUSFS integration patch: $ksu_susfs_patch" >&2
             exit 1
           fi
-          # SUSFS's KSU-side patch expects the matching sucompat header from
-          # the same patch set. Copy it before applying the integration patch.
-          cp "$GITHUB_WORKSPACE/susfs4ksu/kernel_patches/KernelSU/kernel/sucompat.h" \
-            "$KERNEL_DIR/KernelSU-Next/kernel/sucompat.h"
+          # Older SUSFS revisions ship a replacement sucompat.h; some branch heads
+          # no longer include it. Copy it only when the selected patch set provides it.
+          # The integration patch below remains strict: incompatible patches must fail.
+          susfs_sucompat="$GITHUB_WORKSPACE/susfs4ksu/kernel_patches/KernelSU/kernel/sucompat.h"
+          if [ -s "$susfs_sucompat" ]; then
+            cp "$susfs_sucompat" "$KERNEL_DIR/KernelSU-Next/kernel/sucompat.h"
+            echo "Installed SUSFS-provided sucompat.h"
+          else
+            echo "::notice::Selected SUSFS ref does not provide KernelSU/kernel/sucompat.h; continuing to validate the integration patch itself."
+          fi
           cd KernelSU-Next
           patch --forward --batch -p1 < "$GITHUB_WORKSPACE/susfs4ksu/kernel_patches/KernelSU/10_enable_susfs_for_ksu.patch"
           cd ..
