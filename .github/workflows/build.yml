@@ -256,7 +256,13 @@ jobs:
           # The selected KernelSU-Next dev-susfs branch already contains the
           # KernelSU-side SUSFS integration. Do not apply the legacy 10_enable
           # patch: its file layout is incompatible with KernelSU-Next v3.
-          if ! grep -qE '^[[:space:]]*config KSU_SUSFS
+          if ! grep -qE '^[[:space:]]*config KSU_SUSFS$' KernelSU-Next/kernel/Kconfig; then
+            echo "::error::Selected KernelSU-Next tree does not define CONFIG_KSU_SUSFS; refusing partial SUSFS integration." >&2
+            exit 1
+          fi
+          echo "Verified CONFIG_KSU_SUSFS is defined in the pre-integrated KernelSU-Next tree."
+
+          cp ../susfs4ksu/kernel_patches/fs/* ./fs/
           cp ../susfs4ksu/kernel_patches/include/linux/* ./include/linux/
           susfs_patch="../susfs4ksu/kernel_patches/50_add_susfs_in_${{ inputs.susfs_branch || 'gki-android13-5.10' }}.patch"
           if [ ! -s "$susfs_patch" ]; then
