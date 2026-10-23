@@ -254,7 +254,7 @@ jobs:
             exit 1
           fi
           cd KernelSU-Next
-          patch --forward --batch -p1 < "../susfs4ksu/kernel_patches/KernelSU/10_enable_susfs_for_ksu.patch"
+          patch --forward --batch -p1 < "$GITHUB_WORKSPACE/susfs4ksu/kernel_patches/KernelSU/10_enable_susfs_for_ksu.patch"
           cd ..
 
           cp ../susfs4ksu/kernel_patches/fs/* ./fs/
