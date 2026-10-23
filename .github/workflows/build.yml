@@ -242,10 +242,28 @@ jobs:
       - name: Apply SUSFS patches
         if: ${{ inputs.susfs_support == true }}
         run: |
+          set -euo pipefail
           cd "$KERNEL_DIR"
+
+          # SUSFS needs both halves: KernelSU integration and kernel filesystem hooks.
+          # CONFIG_KSU_SUSFS cannot be enabled by appending a symbol that Kconfig
+          # does not define; apply the matching SUSFS patch to the pinned KSU-Next tree.
+          ksu_susfs_patch="../susfs4ksu/kernel_patches/KernelSU/10_enable_susfs_for_ksu.patch"
+          if [ ! -s "$ksu_susfs_patch" ]; then
+            echo "::error::Missing KernelSU SUSFS integration patch: $ksu_susfs_patch" >&2
+            exit 1
+          fi
+          cd KernelSU-Next
+          patch --forward --batch -p1 < "$GITHUB_WORKSPACE/susfs4ksu/kernel_patches/KernelSU/10_enable_susfs_for_ksu.patch"
+          cd ..
+
           cp ../susfs4ksu/kernel_patches/fs/* ./fs/
           cp ../susfs4ksu/kernel_patches/include/linux/* ./include/linux/
           susfs_patch="../susfs4ksu/kernel_patches/50_add_susfs_in_${{ inputs.susfs_branch || 'gki-android13-5.10' }}.patch"
+          if [ ! -s "$susfs_patch" ]; then
+            echo "::error::Missing kernel SUSFS patch: $susfs_patch" >&2
+            exit 1
+          fi
           if [ "${{ inputs.susfs_force }}" = "true" ]; then
             patch -p1 --force < "$susfs_patch" || echo "Continuing despite patch failure"
           else
