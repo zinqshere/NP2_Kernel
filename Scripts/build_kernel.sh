@@ -116,7 +116,10 @@ if ! grep -q '^CONFIG_KSU=y$' out/.config; then
   echo "::error::CONFIG_KSU=y did not survive olddefconfig" >&2
   exit 1
 fi
-if [ "${SUSFS_SUPPORT}" = "true" ] && ! grep -q '^CONFIG_KSU_SUSFS=y
+if [ "${SUSFS_SUPPORT}" = "true" ] && ! grep -q '^CONFIG_KSU_SUSFS=y$' out/.config; then
+  echo "::error::SUSFS was requested but CONFIG_KSU_SUSFS=y is absent after olddefconfig. Refusing to package a kernel without built-in SUSFS." >&2
+  exit 1
+fi
 
 [ -f scripts/setlocalversion ] && sed -i 's/-dirty//g' scripts/setlocalversion || true
 
