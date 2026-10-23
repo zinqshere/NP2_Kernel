@@ -257,7 +257,7 @@ jobs:
           grep -q 'KERNEL_SU_UAPI_VERSION = 5;' uapi/supercall.h
           echo "KernelSU-Next now advertises UAPI v5 for the installed older Manager."
           patch --forward --batch -p1 < "$GITHUB_WORKSPACE/patches/ksunext/004.version-code-33355.patch"
-          grep -q 'KSU_VERSION=33355' Kbuild
+          grep -q 'KSU_VERSION=33355' kernel/Kbuild
           echo "KernelSU-Next reported version code is pinned to 33355."
 
       - name: Apply SUSFS patches
