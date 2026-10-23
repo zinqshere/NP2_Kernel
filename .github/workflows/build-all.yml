@@ -15,14 +15,13 @@ jobs:
             kernel_repo: https://github.com/LineageOS/android_kernel_nothing_sm8475.git
             kernel_branch: lineage-23.2
             kernel_defconfig: gki_defconfig
-            extra_configs: vendor/waipio_GKI.config vendor/nothing/waipio_GKI.config vendor/debugfs.config
-            extra_patches_dir: ''
+            extra_configs: 'vendor/waipio_GKI.config vendor/nothing/waipio_GKI.config vendor/debugfs.config'
+            extra_patches_dir: patches/droidspaces
             susfs_support: true
+            susfs_branch: gki-android13-5.10
             bbg_support: false
             susfs_force: false
             droidspaces_support: true
-            extra_patches_dir: patches/droidspaces
-            extra_configs: 'vendor/waipio_GKI.config vendor/nothing/waipio_GKI.config vendor/debugfs.config'
 
           # NothingOSS Build
           - name: NothingOSS
@@ -30,10 +29,10 @@ jobs:
             kernel_repo: https://github.com/NothingOSS/android_kernel_msm-5.10_nothing_sm8475.git
             kernel_branch: sm8475/b/mr
             kernel_defconfig: gki_defconfig
-            extra_configs: vendor/waipio_GKI.config
-            extra_patches_dir: ''
+            extra_configs: 'vendor/waipio_GKI.config'
             extra_patches_dir: patches/droidspaces
             susfs_support: true
+            susfs_branch: gki-android13-5.10
             bbg_support: false
             susfs_force: false
             droidspaces_support: true
@@ -47,6 +46,7 @@ jobs:
             extra_configs: ''
             extra_patches_dir: patches/arter97
             susfs_support: true
+            susfs_branch: gki-android13-5.10
             bbg_support: false
             susfs_force: false
             droidspaces_support: false
@@ -60,5 +60,7 @@ jobs:
       extra_configs: ${{ matrix.extra_configs }}
       extra_patches_dir: ${{ matrix.extra_patches_dir }}
       susfs_support: ${{ matrix.susfs_support }}
+      susfs_branch: ${{ matrix.susfs_branch }}
       bbg_support: ${{ matrix.bbg_support }}
       susfs_force: ${{ matrix.susfs_force }}
+      droidspaces_support: ${{ matrix.droidspaces_support }}
