@@ -248,6 +248,15 @@ jobs:
             patch -p1 < "$patch"
           done < <(find "$patch_dir" -maxdepth 1 -type f \( -name '*.patch' -o -name '*.diff' \) -print0 | sort -z)
 
+      - name: Apply KernelSU-Next Manager v5 compatibility
+        if: ${{ inputs.susfs_support == true }}
+        run: |
+          set -euo pipefail
+          cd "$KERNEL_DIR/KernelSU-Next"
+          patch --forward --batch -p1 < "$GITHUB_WORKSPACE/patches/droidspaces/003.kernelsu-next-uapi-v5-compat.patch"
+          grep -q 'KERNEL_SU_UAPI_VERSION = 5;' uapi/supercall.h
+          echo "KernelSU-Next now advertises UAPI v5 for the installed older Manager."
+
       - name: Apply SUSFS patches
         if: ${{ inputs.susfs_support == true }}
         run: |
