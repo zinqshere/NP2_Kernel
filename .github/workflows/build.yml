@@ -253,7 +253,7 @@ jobs:
         run: |
           set -euo pipefail
           cd "$KERNEL_DIR/KernelSU-Next"
-          patch --forward --batch -p1 < "$GITHUB_WORKSPACE/patches/droidspaces/003.kernelsu-next-uapi-v5-compat.patch"
+          patch --forward --batch -p1 < "$GITHUB_WORKSPACE/patches/ksunext/003.uapi-v5-compat.patch"
           grep -q 'KERNEL_SU_UAPI_VERSION = 5;' uapi/supercall.h
           echo "KernelSU-Next now advertises UAPI v5 for the installed older Manager."
 
