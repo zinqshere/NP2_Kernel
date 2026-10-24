@@ -3,7 +3,7 @@ set -euo pipefail
 
 cd "${KERNEL_DIR}"
 
-export LOCALVERSION="-meow"
+export LOCALVERSION="-zinq"
 
 defconfig_targets=()
 defconfig_paths=()
