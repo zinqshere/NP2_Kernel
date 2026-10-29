@@ -62,12 +62,6 @@ on:
         required: false
         type: string
         default: 'LineageOS'
-      kernelsu_ref:
-        description: 'Official KernelSU-Next tag or commit'
-        required: false
-        type: string
-        default: 'v3.4.2'
-
   workflow_call:
     inputs:
       kernel_repo:
@@ -116,12 +110,6 @@ on:
         required: false
         type: string
         default: 'LineageOS'
-      kernelsu_ref:
-        description: 'Official KernelSU-Next tag or commit'
-        required: false
-        type: string
-        default: 'v3.4.2'
-
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -188,31 +176,28 @@ jobs:
           git clone --depth=1 https://github.com/osm0sis/AnyKernel3.git "$ANYKERNEL_DIR"
           rm -rf "$ANYKERNEL_DIR/.git"
 
-      - name: Setup official KernelSU-Next
-        env:
-          KSU_NEXT_REF: ${{ inputs.kernelsu_ref || 'v3.4.2' }}
+      - name: Fetch latest KernelSU-Next
         run: |
           set -euo pipefail
           cd "$KERNEL_DIR"
 
-          # Record the kernel revision and target root branch in the Actions log.
+          # Record the workflow repository revision in the Actions log.
           git -C "$GITHUB_WORKSPACE" rev-parse --short HEAD || true
+
+          # Fetch the latest commit on the appropriate branch at workflow run time.
+          # Keep the SUSFS-integrated fork when SUSFS is enabled; upstream KSUN does
+          # not guarantee that its default branch includes this fork's SUSFS integration.
           if [ "${{ inputs.susfs_support }}" = "true" ]; then
-            # The stock SUSFS patch in susfs4ksu targets classic KernelSU layouts,
-            # not the official KernelSU-Next v3 tree. Use the SUSFS-integrated KSUN fork.
             git clone --depth=1 -b dev-susfs https://github.com/pershoot/KernelSU-Next.git KernelSU-Next
-            git -C KernelSU-Next checkout --detach d21e0a66c887ae4bc75b7c9f83e41761819ec09a
-            echo "Using pre-integrated KernelSU-Next SUSFS commit: d21e0a66c887ae4bc75b7c9f83e41761819ec09a"
-            git -C KernelSU-Next rev-parse HEAD
           else
-            git clone --filter=blob:none --no-checkout https://github.com/KernelSU-Next/KernelSU-Next.git KernelSU-Next
-            git -C KernelSU-Next fetch --depth=1 origin "refs/tags/$KSU_NEXT_REF:refs/tags/$KSU_NEXT_REF"
-            git -C KernelSU-Next checkout --detach "$KSU_NEXT_REF"
+            git clone --depth=1 https://github.com/KernelSU-Next/KernelSU-Next.git KernelSU-Next
           fi
 
-          # setup.sh's driver-directory detection expects drivers/ or common/drivers.
-          # The script also tracks the upstream repo's default branch; do the wiring explicitly
-          # after pinning the tag to avoid accidentally updating away from the requested version.
+          # Log the exact revision fetched so each build can be reproduced/debugged.
+          echo "KernelSU-Next commit: $(git -C KernelSU-Next rev-parse --short HEAD)"
+          git -C KernelSU-Next rev-parse HEAD
+
+          # Wire KernelSU-Next into the kernel's driver build and Kconfig.
           DRIVER_DIR="$PWD/drivers"
           if [ ! -d "$DRIVER_DIR" ]; then
             echo "::error::Kernel source does not contain drivers/; cannot wire KernelSU-Next" >&2
@@ -220,13 +205,10 @@ jobs:
           fi
 
           ln -sfn "$(realpath --relative-to="$DRIVER_DIR" "$PWD/KernelSU-Next/kernel")" "$DRIVER_DIR/kernelsu"
-          grep -qE '^[[:space:]]*obj-\$\(CONFIG_KSU\)[[:space:]]*\+=' "$DRIVER_DIR/Makefile" || \
+          grep -qE '^[[:space:]]*obj-\$(CONFIG_KSU)[[:space:]]*+=' "$DRIVER_DIR/Makefile" || \
             printf '\nobj-$(CONFIG_KSU) += kernelsu/\n' >> "$DRIVER_DIR/Makefile"
           grep -q 'source "drivers/kernelsu/Kconfig"' "$DRIVER_DIR/Kconfig" || \
             sed -i '/^endmenu/i source "drivers/kernelsu/Kconfig"' "$DRIVER_DIR/Kconfig"
-
-          echo "KernelSU-Next commit: $(git -C KernelSU-Next rev-parse --short HEAD)"
-          git -C KernelSU-Next rev-parse HEAD
 
       - name: Clone SUSFS
         if: ${{ inputs.susfs_support == true }}
@@ -247,18 +229,6 @@ jobs:
             echo "Applying $patch"
             patch -p1 < "$patch"
           done < <(find "$patch_dir" -maxdepth 1 -type f \( -name '*.patch' -o -name '*.diff' \) -print0 | sort -z)
-
-      - name: Apply KernelSU-Next Manager v5 compatibility
-        if: ${{ inputs.susfs_support == true }}
-        run: |
-          set -euo pipefail
-          cd "$KERNEL_DIR/KernelSU-Next"
-          patch --forward --batch -p1 < "$GITHUB_WORKSPACE/patches/ksunext/003.uapi-v5-compat.patch"
-          grep -q 'KERNEL_SU_UAPI_VERSION = 5;' uapi/supercall.h
-          echo "KernelSU-Next now advertises UAPI v5 for the installed older Manager."
-          patch --forward --batch -p1 < "$GITHUB_WORKSPACE/patches/ksunext/004.version-code-33355.patch"
-          grep -q 'KSU_VERSION=33355' kernel/Kbuild
-          echo "KernelSU-Next reported version code is pinned to 33355."
 
       - name: Apply SUSFS patches
         if: ${{ inputs.susfs_support == true }}
