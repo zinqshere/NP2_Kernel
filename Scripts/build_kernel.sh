@@ -71,9 +71,9 @@ EXTRA_CFG="out/ci-extra.config"
 : > "${EXTRA_CFG}"
 echo "CONFIG_KSU=y" >> "${EXTRA_CFG}"
 
-# Official KernelSU-Next v3.4.2 exposes KSU as the driver Kconfig option.
-# SUSFS in this workflow is applied via the external SUSFS patch set; do not
-# assume that the official KSU tree defines CONFIG_KSU_SUSFS.
+# KernelSU-Next exposes KSU as the driver Kconfig option.
+# When SUSFS is enabled, the workflow uses a SUSFS-integrated KernelSU-Next fork
+# and applies the matching external SUSFS kernel patch set.
 if [ "${SUSFS_SUPPORT}" = "true" ]; then
   echo "CONFIG_KSU_SUSFS=y" >> "${EXTRA_CFG}"
 fi
