@@ -4,6 +4,8 @@ set -euo pipefail
 cd "${KERNEL_DIR}"
 
 export LOCALVERSION="-zinq"
+# Keep the kernel's UTS version timestamp deterministic within this build.
+export KBUILD_BUILD_TIMESTAMP="${KBUILD_BUILD_TIMESTAMP:-$(date -u '+%a %b %d %H:%M:%S UTC %Y')}"
 
 defconfig_targets=()
 defconfig_paths=()
@@ -47,6 +49,10 @@ if [ -n "${DEFCONFIG_FRAGS:-}" ]; then
     fi
   done
 fi
+
+# Remove all generated output before configuring. This prevents stale
+# utsrelease.h/utsversion.h and other generated metadata from being reused.
+make ${MAKE_ARGS} mrproper
 
 make ${MAKE_ARGS} "${defconfig_targets[0]}"
 
@@ -123,6 +129,36 @@ fi
 
 [ -f scripts/setlocalversion ] && sed -i 's/-dirty//g' scripts/setlocalversion || true
 
+# Verify that Kbuild generated one consistent release identifier before
+# compiling it into both init_uts_ns (uname) and the /proc/version banner.
+EXPECTED_RELEASE="$(make -s ${MAKE_ARGS} kernelrelease)"
+UTSRELEASE_FILE="out/include/generated/utsrelease.h"
+if [ ! -s "${UTSRELEASE_FILE}" ] || ! grep -Fq "#define UTS_RELEASE \"${EXPECTED_RELEASE}\"" "${UTSRELEASE_FILE}"; then
+  echo "::error::Generated UTS_RELEASE does not match Kbuild kernelrelease (${EXPECTED_RELEASE})." >&2
+  [ -f "${UTSRELEASE_FILE}" ] && cat "${UTSRELEASE_FILE}" >&2
+  exit 1
+fi
+echo "Verified kernel release: ${EXPECTED_RELEASE}"
+echo "Kernel build timestamp: ${KBUILD_BUILD_TIMESTAMP}"
+[ -s out/include/generated/utsversion.h ] && cat out/include/generated/utsversion.h
+
 JOBS=$(( $(nproc) / 2 ))
 [ "${JOBS}" -lt 1 ] && JOBS=1
 make -j"${JOBS}" ${MAKE_ARGS} Image KCFLAGS="-Wno-error"
+
+IMAGE="out/arch/arm64/boot/Image"
+EXPECTED_UTS_VERSION="$(sed -n 's/^#define UTS_VERSION "\(.*\)"/\1/p' out/include/generated/utsversion.h)"
+if [ -z "${EXPECTED_UTS_VERSION}" ]; then
+  echo "::error::Could not read generated UTS_VERSION." >&2
+  exit 1
+fi
+if [ ! -s "${IMAGE}" ] || ! grep -aFq "Linux version ${EXPECTED_RELEASE} (" "${IMAGE}"; then
+  echo "::error::Built Image banner does not contain expected release ${EXPECTED_RELEASE}." >&2
+  exit 1
+fi
+if ! grep -aFq "${EXPECTED_UTS_VERSION}" "${IMAGE}"; then
+  echo "::error::Built Image does not contain generated UTS_VERSION (${EXPECTED_UTS_VERSION})." >&2
+  exit 1
+fi
+echo "Verified Image banner release: ${EXPECTED_RELEASE}"
+echo "Verified Image UTS version: ${EXPECTED_UTS_VERSION}"
