@@ -37,6 +37,10 @@ if [ "${#defconfig_targets[@]}" -lt 1 ]; then
   exit 1
 fi
 
+# Remove stale generated Kbuild metadata from the dedicated output directory.
+# MAKE_ARGS includes O=out, so source configuration and applied patches remain intact.
+make ${MAKE_ARGS} mrproper
+
 frags=()
 if [ -n "${DEFCONFIG_FRAGS:-}" ]; then
   for frag in ${DEFCONFIG_FRAGS}; do
