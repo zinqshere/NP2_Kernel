@@ -149,14 +149,19 @@ if [ ! -s "${UTSRELEASE_FILE}" ] || ! grep -Fq "#define UTS_RELEASE \"${EXPECTED
 fi
 echo "Verified kernel release: ${EXPECTED_RELEASE}"
 echo "Kernel build timestamp: ${KBUILD_BUILD_TIMESTAMP}"
-[ -s out/include/generated/utsversion.h ] && cat out/include/generated/utsversion.h
 
 JOBS=$(( $(nproc) / 2 ))
 [ "${JOBS}" -lt 1 ] && JOBS=1
 make -j"${JOBS}" ${MAKE_ARGS} Image KCFLAGS="-Wno-error"
 
 IMAGE="out/arch/arm64/boot/Image"
-EXPECTED_UTS_VERSION="$(sed -n 's/^#define UTS_VERSION "\(.*\)"/\1/p' out/include/generated/utsversion.h)"
+# Linux 5.10 generates UTS_VERSION in compile.h (not utsversion.h).
+COMPILE_HEADER="out/include/generated/compile.h"
+if [ ! -s "${COMPILE_HEADER}" ]; then
+  echo "::error::Missing generated compile header: ${COMPILE_HEADER}" >&2
+  exit 1
+fi
+EXPECTED_UTS_VERSION="$(sed -n 's/^#define UTS_VERSION "\(.*\)"/\1/p' "${COMPILE_HEADER}")"
 if [ -z "${EXPECTED_UTS_VERSION}" ]; then
   echo "::error::Could not read generated UTS_VERSION." >&2
   exit 1
