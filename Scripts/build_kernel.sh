@@ -133,6 +133,11 @@ fi
 
 [ -f scripts/setlocalversion ] && sed -i 's/-dirty//g' scripts/setlocalversion || true
 
+# Generate the headers (including utsrelease.h) before validating the release.
+# kernelrelease can be computed before this header exists, so checking it
+# immediately after olddefconfig causes a false failure on a clean output tree.
+make ${MAKE_ARGS} prepare
+
 # Verify that Kbuild generated one consistent release identifier before
 # compiling it into both init_uts_ns (uname) and the /proc/version banner.
 EXPECTED_RELEASE="$(make -s ${MAKE_ARGS} kernelrelease)"
