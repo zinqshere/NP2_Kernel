@@ -176,3 +176,19 @@ if ! grep -aFq "${EXPECTED_UTS_VERSION}" "${IMAGE}"; then
 fi
 echo "Verified Image banner release: ${EXPECTED_RELEASE}"
 echo "Verified Image UTS version: ${EXPECTED_UTS_VERSION}"
+
+# Validate Android's os.version against the release that init_uts_ns/uname
+# will expose. Android's early init reads /proc/version and publishes the
+# kernel release as ro.kernel.version; a mismatch here usually means the
+# wrong kernel image/boot partition was flashed or a boot-time property
+# override changed the value. Do not override ro.kernel.version to hide it.
+#
+# Keep the expected release in the build artifact for post-flash diagnostics.
+VERSION_MANIFEST="out/kernel-version.txt"
+{
+  printf 'KERNELRELEASE=%s\\n' "${EXPECTED_RELEASE}"
+  printf 'UTS_VERSION=%s\\n' "${EXPECTED_UTS_VERSION}"
+  printf 'KERNEL_SOURCE=%s\\n' "$(git -C "$KERNEL_DIR" rev-parse --short HEAD 2>/dev/null || echo unknown)"
+  printf 'LOCALVERSION=%s\\n' "${LOCALVERSION}"
+} > "${VERSION_MANIFEST}"
+
