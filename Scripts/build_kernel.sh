@@ -132,7 +132,8 @@ if [ "${SUSFS_SUPPORT}" = "true" ] && ! grep -q '^CONFIG_KSU_SUSFS=y$' out/.conf
   exit 1
 fi
 
-[ -f scripts/setlocalversion ] && sed -i 's/-dirty//g' scripts/setlocalversion || true
+# Keep the upstream scripts/setlocalversion implementation unchanged.
+# Kbuild will generate the native SCM suffix from the selected source tree.
 
 # Generate the headers (including utsrelease.h) before validating the release.
 # kernelrelease can be computed before this header exists, so checking it
