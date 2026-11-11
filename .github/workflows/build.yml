@@ -286,6 +286,17 @@ jobs:
           DROIDSPACES_SUPPORT="${{ inputs.droidspaces_support }}" \
           Scripts/build_kernel.sh
 
+      - name: Verify and publish kernel identity manifest
+        run: |
+          set -euo pipefail
+          manifest="$KERNEL_DIR/out/kernel-version.txt"
+          test -s "$manifest"
+          cat "$manifest"
+          grep -q '^KERNELRELEASE=5\\.10\\.246' "$manifest" || {
+            echo "::error::Unexpected kernel release in build manifest" >&2
+            exit 1
+          }
+
       - name: CCache Stats
         run: ccache -s
 
