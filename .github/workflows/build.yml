@@ -297,9 +297,18 @@ jobs:
           # 5.10 kernel tree, without pinning its evolving SCM hash.
           release="$(sed -n 's/^KERNELRELEASE=//p' "$manifest")"
           case "$release" in
-            5.10.*-zinq*) ;;
+            5.10.*) ;;
             *)
               echo "::error::Unexpected kernel release in build manifest: $release" >&2
+              exit 1
+              ;;
+          esac
+
+          # Never append the NP2_Kernel-specific identity suffix. The
+          # release must come from the selected upstream source/config.
+          case "$release" in
+            *-zinq*)
+              echo "::error::Custom -zinq kernel identity suffix is forbidden: $release" >&2
               exit 1
               ;;
           esac
