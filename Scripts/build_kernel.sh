@@ -3,7 +3,8 @@ set -euo pipefail
 
 cd "${KERNEL_DIR}"
 
-export LOCALVERSION="-zinq"
+# Do not add a repository-specific LOCALVERSION suffix.
+# Let the selected upstream kernel tree generate its native release string.
 # Keep the kernel's UTS version timestamp deterministic within this build.
 export KBUILD_BUILD_TIMESTAMP="${KBUILD_BUILD_TIMESTAMP:-$(date -u '+%a %b %d %H:%M:%S UTC %Y')}"
 
@@ -184,5 +185,5 @@ VERSION_MANIFEST="out/kernel-version.txt"
   printf 'KERNELRELEASE=%s\n' "${EXPECTED_RELEASE}"
   printf 'UTS_VERSION=%s\n' "${EXPECTED_UTS_VERSION}"
   printf 'KERNEL_SOURCE=%s\n' "$(git rev-parse --short HEAD 2>/dev/null || echo unknown)"
-  printf 'LOCALVERSION=%s\n' "${LOCALVERSION}"
+  printf 'LOCALVERSION=%s\n' "${LOCALVERSION-}"
 } > "${VERSION_MANIFEST}"
